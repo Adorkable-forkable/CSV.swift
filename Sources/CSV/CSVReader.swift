@@ -644,11 +644,6 @@ extension CSVReader {
         func decode<T>(_ type: T.Type, forKey key: K) throws -> T where T : Decodable {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
-            
-            guard let stringValue = self.valueFor(column: key) else {
-                throw DecodingError.valueNotFound(type,
-                                                  DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...)"))
-            }
 
             if type == Date.self || type == NSDate.self {
                 guard let container = try self.decoder.singleValueContainer() as? CSVSingleValueDecodingContainer else {
