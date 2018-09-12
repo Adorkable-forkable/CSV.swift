@@ -724,11 +724,11 @@ extension CSVReader {
         public func decode(_ expectedType: Bool.Type) throws -> Bool {
             try expectNonNull(Bool.self)
             
-            if let number = self.value as? NSNumber {
+            let numberAsBool = { (value: NSNumber) -> Bool? in
                 // TODO: Add a flag to coerce non-boolean numbers into Bools?
-                if number === kCFBooleanTrue as NSNumber {
+                if value === kCFBooleanTrue as NSNumber {
                     return true
-                } else if number === kCFBooleanFalse as NSNumber {
+                } else if value === kCFBooleanFalse as NSNumber {
                     return false
                 }
                 
@@ -736,7 +736,24 @@ extension CSVReader {
                  } else if let bool = value as? Bool {
                  return bool
                  */
+                return nil
+            }
+            
+            if let number = self.value as? NSNumber,
+                let result = numberAsBool(number) {
                 
+                return result
+            } else if let asString = self.value as? String {
+                if asString.uppercased() == "TRUE" || asString.uppercased() == "YES" {
+                    return true
+                } else if asString.uppercased() == "FALSE" || asString.uppercased() == "NO" {
+                    return false
+                }
+                let formatter = NumberFormatter()
+                formatter.allowsFloats = false
+                if let number = formatter.number(from: asString) {
+                    return Bool(truncating: number)
+                }
             }
             
             throw DecodingError.typeMismatch(expectedType,

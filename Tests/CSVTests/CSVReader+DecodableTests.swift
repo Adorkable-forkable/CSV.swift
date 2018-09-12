@@ -26,6 +26,7 @@ class CSVReader_DecodableTests: XCTestCase {
         let optionalStringKey: String?
         let dateKey: Date
         let enumKey: Enum
+        let boolKey: Bool
         
         static func ==(left: SupportedDecodableExample, right: SupportedDecodableExample) -> Bool {
             let formatter = CSVReader.dateFormatter
@@ -33,12 +34,13 @@ class CSVReader_DecodableTests: XCTestCase {
                 //&& left.dateKey.compare(right.dateKey) == ComparisonResult.orderedSame // TODO: find more accurate conversion method, cannot compare directly likely because we are losing precision when in csv
                 && formatter.string(from: left.dateKey) == formatter.string(from: right.dateKey)
                 && left.enumKey == right.enumKey
+                && left.boolKey == right.boolKey
         }
         
         static var examples: [SupportedDecodableExample] {
             return [
-                SupportedDecodableExample(intKey: 12345, stringKey: "stringValue", optionalStringKey: nil, dateKey: Date(), enumKey: .first),
-                SupportedDecodableExample(intKey: 54321, stringKey: "stringValue2", optionalStringKey: "withValue", dateKey: Date(timeInterval: 100, since: Date()), enumKey: .second)
+                SupportedDecodableExample(intKey: 12345, stringKey: "stringValue", optionalStringKey: nil, dateKey: Date(), enumKey: .first, boolKey: true),
+                SupportedDecodableExample(intKey: 54321, stringKey: "stringValue2", optionalStringKey: "withValue", dateKey: Date(timeInterval: 100, since: Date()), enumKey: .second, boolKey: false)
             ]
         }
     }
@@ -67,9 +69,9 @@ class CSVReader_DecodableTests: XCTestCase {
         let dateFormatter = CSVReader.dateFormatter
         
         let headerIt = """
-            stringKey,optionalStringKey,intKey,ignored,dateKey,enumKey
-            \(exampleRecords[0].stringKey),,\(exampleRecords[0].intKey),,\"\(dateFormatter.string(from: exampleRecords[0].dateKey))\",\(exampleRecords[0].enumKey)
-            \(exampleRecords[1].stringKey),\(exampleRecords[1].optionalStringKey!),\(exampleRecords[1].intKey),,\"\(dateFormatter.string(from: exampleRecords[1].dateKey))\",\(exampleRecords[1].enumKey)
+            stringKey,optionalStringKey,intKey,ignored,dateKey,enumKey,boolKey
+            \(exampleRecords[0].stringKey),,\(exampleRecords[0].intKey),,\"\(dateFormatter.string(from: exampleRecords[0].dateKey))\",\(exampleRecords[0].enumKey),\(exampleRecords[0].boolKey)
+            \(exampleRecords[1].stringKey),\(exampleRecords[1].optionalStringKey!),\(exampleRecords[1].intKey),,\"\(dateFormatter.string(from: exampleRecords[1].dateKey))\",\(exampleRecords[1].enumKey),\(exampleRecords[1].boolKey)
             """.unicodeScalars.makeIterator()
         let headerCSV = try! CSVReader(iterator: headerIt, configuration: headerConfig)
         
