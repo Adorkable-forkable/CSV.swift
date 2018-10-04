@@ -2,5 +2,8 @@ disabled_rules:
   - force_cast
   - force_try
   - variable_name
+file_length:
+  warning: 250
+  error: 9999
 included:
   - Sources
