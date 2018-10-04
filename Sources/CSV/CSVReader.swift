@@ -398,37 +398,37 @@ extension CSVReader {
 }
 
 extension CSVReader {
-    
+
     static var dateFormatter: DateFormatter {
         let result = DateFormatter()
         result.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSZZZZZ"
         return result
     }
-    
+
     private class CSVRowDecoder: Decoder {
         var codingPath: [CodingKey]
-        
+
         let valuesByColumn: [String: String]
-        
-        let userInfo: [CodingUserInfoKey : Any]
-        
-        init(codingPath: [CodingKey], valuesByColumn: [String: String], userInfo: [CodingUserInfoKey : Any] = [:]) {
+
+        let userInfo: [CodingUserInfoKey: Any]
+
+        init(codingPath: [CodingKey], valuesByColumn: [String: String], userInfo: [CodingUserInfoKey: Any] = [:]) {
             self.codingPath = codingPath
             self.valuesByColumn = valuesByColumn
             self.userInfo = userInfo
         }
-        
-        func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key : CodingKey {
+
+        func container<Key>(keyedBy type: Key.Type) throws -> KeyedDecodingContainer<Key> where Key: CodingKey {
             let container = CSVKeyedDecodingContainer<Key>(referencing: self)
             return KeyedDecodingContainer(container)
         }
-        
+
         func unkeyedContainer() throws -> UnkeyedDecodingContainer {
             throw DecodingError.valueNotFound(UnkeyedDecodingContainer.self,
                                               DecodingError.Context(codingPath: self.codingPath,
                                                                     debugDescription: "Cannot get unkeyed decoding container -- found null value instead."))
         }
-        
+
         func singleValueContainer() throws -> SingleValueDecodingContainer {
             let key = self.codingPath[0].stringValue
             guard let value = self.valuesByColumn[key] else {
@@ -439,116 +439,116 @@ extension CSVReader {
             return CSVSingleValueDecodingContainer(codingPath: self.codingPath, value: value) // TODO: test path assumption
         }
     }
-    
-    private class CSVKeyedDecodingContainer<K : CodingKey> : KeyedDecodingContainerProtocol {
+
+    private class CSVKeyedDecodingContainer<K: CodingKey> : KeyedDecodingContainerProtocol {
         typealias Key = K
-        
+
         let decoder: CSVRowDecoder
-        
+
         var codingPath: [CodingKey] {
             return self.decoder.codingPath
         }
-        
+
         var allKeys: [K] {
             return self.decoder.valuesByColumn.keys.compactMap { K(stringValue: $0) }
         }
-        
+
         var valuesByColumn: [String: String] {
             return self.decoder.valuesByColumn
         }
-        
+
         func valueFor(column: CodingKey) -> String? {
             return self.valuesByColumn[column.stringValue]
         }
-        
+
         init(referencing decoder: CSVRowDecoder) {
             self.decoder = decoder
         }
-        
+
         func contains(_ key: K) -> Bool {
             return self.valueFor(column: key) != nil
         }
-        
+
         func decodeNil(forKey key: K) throws -> Bool {
             guard let value = self.valueFor(column: key) else {
                 return true
             }
-            
+
             if value.count == 0 {
                 return true
             }
-            
+
             return false
         }
-        
+
         // TODO: support DecodingError.keyNotFound
         // TODO: support DecodingError.valueNotFound
         func decode(_ type: Bool.Type, forKey key: K) throws -> Bool {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
-            
+
             return try self.decoder.singleValueContainer().decode(type)
         }
-        
+
         func decode(_ type: String.Type, forKey key: K) throws -> String {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
-            
+
             guard let result = self.valueFor(column: key).flatMap({ String($0) }) else {
                 throw DecodingError.typeMismatch(type,
                                                  DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...) value '\(self.valueFor(column: key) ?? "nil")'"))
             }
             return result
         }
-        
+
         func decode(_ type: Double.Type, forKey key: K) throws -> Double {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
-            
+
             guard let result = self.valueFor(column: key).flatMap({ Double($0) }) else {
                 throw DecodingError.typeMismatch(type,
                                                  DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...) value '\(self.valueFor(column: key) ?? "nil")'"))
             }
             return result
         }
-        
+
         func decode(_ type: Float.Type, forKey key: K) throws -> Float {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
-            
+
             guard let result = self.valueFor(column: key).flatMap({ Float($0) }) else {
                 throw DecodingError.typeMismatch(type,
                                                  DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...) value '\(self.valueFor(column: key) ?? "nil")'"))
             }
             return result
         }
-        
+
         func decode(_ type: Int.Type, forKey key: K) throws -> Int {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
-            
+
             guard let result = self.valueFor(column: key).flatMap({ Int($0) }) else {
                 throw DecodingError.typeMismatch(type,
                                                  DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...) value '\(self.valueFor(column: key) ?? "nil")'"))
             }
             return result
         }
-        
+
         func decode(_ type: Int8.Type, forKey key: K) throws -> Int8 {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
-            
+
             guard let result = self.valueFor(column: key).flatMap({ Int8($0) }) else {
                 throw DecodingError.typeMismatch(type,
                                                  DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...) value '\(self.valueFor(column: key) ?? "nil")'"))
             }
             return result
         }
-        
+
         func decode(_ type: Int16.Type, forKey key: K) throws -> Int16 {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
-            
+
             guard let result = self.valueFor(column: key).flatMap({ Int16($0) }) else {
                 throw DecodingError.typeMismatch(type,
                                                  DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...) value '\(self.valueFor(column: key) ?? "nil")'"))
@@ -556,11 +556,11 @@ extension CSVReader {
             return result
 
         }
-        
+
         func decode(_ type: Int32.Type, forKey key: K) throws -> Int32 {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
-            
+
             guard let result = self.valueFor(column: key).flatMap({ Int32($0) }) else {
                 throw DecodingError.typeMismatch(type,
                                                  DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...) value '\(self.valueFor(column: key) ?? "nil")'"))
@@ -568,11 +568,11 @@ extension CSVReader {
             return result
 
         }
-        
+
         func decode(_ type: Int64.Type, forKey key: K) throws -> Int64 {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
-            
+
             guard let result = self.valueFor(column: key).flatMap({ Int64($0) }) else {
                 throw DecodingError.typeMismatch(type,
                                                  DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...) value '\(self.valueFor(column: key) ?? "nil")'"))
@@ -580,11 +580,11 @@ extension CSVReader {
             return result
 
         }
-        
+
         func decode(_ type: UInt.Type, forKey key: K) throws -> UInt {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
-            
+
             guard let result = self.valueFor(column: key).flatMap({ UInt($0) }) else {
                 throw DecodingError.typeMismatch(type,
                                                  DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...) value '\(self.valueFor(column: key) ?? "nil")'"))
@@ -592,11 +592,11 @@ extension CSVReader {
             return result
 
         }
-        
+
         func decode(_ type: UInt8.Type, forKey key: K) throws -> UInt8 {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
-            
+
             guard let result = self.valueFor(column: key).flatMap({ UInt8($0) }) else {
                 throw DecodingError.typeMismatch(type,
                                                  DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...) value '\(self.valueFor(column: key) ?? "nil")'"))
@@ -604,11 +604,11 @@ extension CSVReader {
             return result
 
         }
-        
+
         func decode(_ type: UInt16.Type, forKey key: K) throws -> UInt16 {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
-            
+
             guard let result = self.valueFor(column: key).flatMap({ UInt16($0) }) else {
                 throw DecodingError.typeMismatch(type,
                                                  DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...) value '\(self.valueFor(column: key) ?? "nil")'"))
@@ -616,11 +616,11 @@ extension CSVReader {
             return result
 
         }
-        
+
         func decode(_ type: UInt32.Type, forKey key: K) throws -> UInt32 {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
-            
+
             guard let result = self.valueFor(column: key).flatMap({ UInt32($0) }) else {
                 throw DecodingError.typeMismatch(type,
                                                  DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...) value '\(self.valueFor(column: key) ?? "nil")'"))
@@ -628,11 +628,11 @@ extension CSVReader {
             return result
 
         }
-        
+
         func decode(_ type: UInt64.Type, forKey key: K) throws -> UInt64 {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
-            
+
             guard let result = self.valueFor(column: key).flatMap({ UInt64($0) }) else {
                 throw DecodingError.typeMismatch(type,
                                                  DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...) value '\(self.valueFor(column: key) ?? "nil")'"))
@@ -640,8 +640,8 @@ extension CSVReader {
             return result
 
         }
-        
-        func decode<T>(_ type: T.Type, forKey key: K) throws -> T where T : Decodable {
+
+        func decode<T>(_ type: T.Type, forKey key: K) throws -> T where T: Decodable {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
 
@@ -650,14 +650,14 @@ extension CSVReader {
                     throw DecodingError.typeMismatch(type,
                                                      DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...) value '\(self.valueFor(column: key) ?? "nil")'"))
                 }
-                
+
                 return try container.decode(Date.self) as! T
             } else {
                 return try type.init(from: self.decoder)
             }
         }
-        
-        func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: K) throws -> KeyedDecodingContainer<NestedKey> where NestedKey : CodingKey {
+
+        func nestedContainer<NestedKey>(keyedBy type: NestedKey.Type, forKey key: K) throws -> KeyedDecodingContainer<NestedKey> where NestedKey: CodingKey {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
 
@@ -666,7 +666,7 @@ extension CSVReader {
                                       debugDescription: "nestedContainer(...) CSV does not support nested values")
             )
         }
-        
+
         func nestedUnkeyedContainer(forKey key: K) throws -> UnkeyedDecodingContainer {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
@@ -676,14 +676,14 @@ extension CSVReader {
                                       debugDescription: "nestedUnkeyedContainer(...) CSV does not support nested values")
             )
         }
-        
+
         func superDecoder() throws -> Decoder {
             throw DecodingError.dataCorrupted(
                 DecodingError.Context(codingPath: codingPath,
                                       debugDescription: "CSV does not support nested values")
             )
         }
-        
+
         func superDecoder(forKey key: K) throws -> Decoder {
             self.decoder.codingPath.append(key)
             defer { self.decoder.codingPath.removeLast() }
@@ -694,12 +694,12 @@ extension CSVReader {
             )
         }
     }
-    
-    class CSVSingleValueDecodingContainer : SingleValueDecodingContainer {
+
+    class CSVSingleValueDecodingContainer: SingleValueDecodingContainer {
         var codingPath: [CodingKey]
-        
+
         let value: Any
-        
+
         init(codingPath: [CodingKey], value: Any) {
             self.codingPath = codingPath
             self.value = value
@@ -709,7 +709,7 @@ extension CSVReader {
                 throw DecodingError.valueNotFound(type, DecodingError.Context(codingPath: self.codingPath, debugDescription: "Expected \(type) but found null value instead."))
             }
         }
-        
+
         public func decodeNil() -> Bool {
             if self.value is NSNull {
                 return true
@@ -720,10 +720,10 @@ extension CSVReader {
             }
             return false
         }
-        
+
         public func decode(_ expectedType: Bool.Type) throws -> Bool {
             try expectNonNull(Bool.self)
-            
+
             let numberAsBool = { (value: NSNumber) -> Bool? in
                 // TODO: Add a flag to coerce non-boolean numbers into Bools?
                 if value === kCFBooleanTrue as NSNumber {
@@ -731,17 +731,17 @@ extension CSVReader {
                 } else if value === kCFBooleanFalse as NSNumber {
                     return false
                 }
-                
+
                 /* FIXME: If swift-corelibs-foundation doesn't change to use NSNumber, this code path will need to be included and tested:
                  } else if let bool = value as? Bool {
                  return bool
                  */
                 return nil
             }
-            
+
             if let number = self.value as? NSNumber,
                 let result = numberAsBool(number) {
-                
+
                 return result
             } else if let asString = self.value as? String {
                 if asString.uppercased() == "TRUE" || asString.uppercased() == "YES" {
@@ -755,16 +755,16 @@ extension CSVReader {
                     return Bool(truncating: number)
                 }
             }
-            
+
             throw DecodingError.typeMismatch(expectedType,
                                              DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...) value '\(self.value)'"))
         }
-        
+
         public func decode(_ expectedType: Int.Type) throws -> Int {
             try expectNonNull(Int.self)
 
             let attemptNumber: NSNumber?
-            
+
             let formatter = NumberFormatter()
             formatter.allowsFloats = false
             if let number = self.value as? NSNumber, number !== kCFBooleanTrue, number !== kCFBooleanFalse {
@@ -775,20 +775,20 @@ extension CSVReader {
             } else {
                 attemptNumber = nil
             }
-            
+
             guard let number = attemptNumber else {
                 throw DecodingError.typeMismatch(expectedType,
                                                  DecodingError.Context(codingPath: codingPath, debugDescription: "decode(...) value '\(self.value)'"))
             }
-            
+
             let int = number.intValue
             guard NSNumber(value: int) == number else {
                 throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Parsed CSV number <\(number)> does not fit in \(expectedType)."))
             }
-            
+
             return int
         }
-        
+
         public func decode(_ expectedType: Int8.Type) throws -> Int8 {
             try expectNonNull(Int8.self)
 
@@ -796,15 +796,15 @@ extension CSVReader {
                 throw DecodingError.typeMismatch(expectedType,
                                                  DecodingError.Context(codingPath: self.codingPath, debugDescription: "Value '\(self.value)' is of type \(type(of: self.value))"))
             }
-            
+
             let int8 = number.int8Value
             guard NSNumber(value: int8) == number else {
                 throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Parsed JSON number <\(number)> does not fit in \(expectedType)."))
             }
-            
+
             return int8
         }
-        
+
         public func decode(_ expectedType: Int16.Type) throws -> Int16 {
             try expectNonNull(Int16.self)
 
@@ -812,77 +812,77 @@ extension CSVReader {
                 throw DecodingError.typeMismatch(expectedType,
                                                  DecodingError.Context(codingPath: self.codingPath, debugDescription: "Value '\(self.value)' is of type \(type(of: self.value))"))
             }
-            
+
             let int16 = number.int16Value
             guard NSNumber(value: int16) == number else {
                 throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Parsed JSON number <\(number)> does not fit in \(expectedType)."))
             }
-            
+
             return int16
         }
-        
+
         public func decode(_ expectedType: Int32.Type) throws -> Int32 {
             try expectNonNull(Int32.self)
             guard let number = value as? NSNumber, number !== kCFBooleanTrue, number !== kCFBooleanFalse else {
                 throw DecodingError.typeMismatch(expectedType,
                                                  DecodingError.Context(codingPath: self.codingPath, debugDescription: "Value '\(self.value)' is of type \(type(of: self.value))"))
             }
-            
+
             let int32 = number.int32Value
             guard NSNumber(value: int32) == number else {
                 throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Parsed JSON number <\(number)> does not fit in \(expectedType)."))
             }
-            
+
             return int32
         }
-        
+
         public func decode(_ expectedType: Int64.Type) throws -> Int64 {
             try expectNonNull(Int64.self)
-            
+
             guard let number = value as? NSNumber, number !== kCFBooleanTrue, number !== kCFBooleanFalse else {
                 throw DecodingError.typeMismatch(expectedType,
                                                  DecodingError.Context(codingPath: self.codingPath, debugDescription: "Value '\(self.value)' is of type \(type(of: self.value))"))
             }
-            
+
             let int64 = number.int64Value
             guard NSNumber(value: int64) == number else {
                 throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Parsed CSV number <\(number)> does not fit in \(expectedType)."))
             }
-            
+
             return int64
         }
-        
+
         public func decode(_ expectedType: UInt.Type) throws -> UInt {
             try expectNonNull(UInt.self)
-            
+
             guard let number = value as? NSNumber, number !== kCFBooleanTrue, number !== kCFBooleanFalse else {
                 throw DecodingError.typeMismatch(expectedType,
                                                  DecodingError.Context(codingPath: self.codingPath, debugDescription: "Value '\(self.value)' is of type \(type(of: self.value))"))
             }
-            
+
             let uint = number.uintValue
             guard NSNumber(value: uint) == number else {
                 throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Parsed CSV number <\(number)> does not fit in \(expectedType)."))
             }
-            
+
             return uint
         }
-        
+
         public func decode(_ expectedType: UInt8.Type) throws -> UInt8 {
             try expectNonNull(UInt8.self)
-            
+
             guard let number = value as? NSNumber, number !== kCFBooleanTrue, number !== kCFBooleanFalse else {
             throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Parsed CSV number <\(value)> does not fit in \(expectedType)."))
             }
-            
+
             let uint8 = number.uint8Value
             guard NSNumber(value: uint8) == number else {
                 throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Parsed JSON number <\(number)> does not fit in \(expectedType)."))
             }
-            
+
             return uint8
         }
-        
+
         public func decode(_ expectedType: UInt16.Type) throws -> UInt16 {
             try expectNonNull(UInt16.self)
 
@@ -890,45 +890,45 @@ extension CSVReader {
                 throw DecodingError.typeMismatch(expectedType,
                                                  DecodingError.Context(codingPath: self.codingPath, debugDescription: "Value '\(self.value)' is of type \(type(of: self.value))"))
             }
-            
+
             let uint16 = number.uint16Value
             guard NSNumber(value: uint16) == number else {
                 throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Parsed CSV number <\(number)> does not fit in \(expectedType)."))
             }
-            
+
             return uint16
         }
-        
+
         public func decode(_ expectedType: UInt32.Type) throws -> UInt32 {
             try expectNonNull(UInt32.self)
             guard let number = value as? NSNumber, number !== kCFBooleanTrue, number !== kCFBooleanFalse else {
                 throw DecodingError.typeMismatch(expectedType,
                                                  DecodingError.Context(codingPath: self.codingPath, debugDescription: "Value '\(self.value)' is of type \(type(of: self.value))"))
             }
-            
+
             let uint32 = number.uint32Value
             guard NSNumber(value: uint32) == number else {
                 throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Parsed CSV number <\(number)> does not fit in \(expectedType)."))
             }
-            
+
             return uint32
         }
-        
+
         public func decode(_ expectedType: UInt64.Type) throws -> UInt64 {
             try expectNonNull(UInt64.self)
             guard let number = value as? NSNumber, number !== kCFBooleanTrue, number !== kCFBooleanFalse else {
                 throw DecodingError.typeMismatch(expectedType,
                                                  DecodingError.Context(codingPath: self.codingPath, debugDescription: "Value '\(self.value)' is of type \(type(of: self.value))"))
             }
-            
+
             let uint64 = number.uint64Value
             guard NSNumber(value: uint64) == number else {
                 throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Parsed CSV number <\(number)> does not fit in \(expectedType)."))
             }
-            
+
             return uint64
         }
-        
+
         public func decode(_ expectedType: Float.Type) throws -> Float {
             try expectNonNull(Float.self)
             if let number = value as? NSNumber, number !== kCFBooleanTrue, number !== kCFBooleanFalse {
@@ -942,9 +942,9 @@ extension CSVReader {
                 guard abs(double) <= Double(Float.greatestFiniteMagnitude) else {
                     throw DecodingError.dataCorrupted(DecodingError.Context(codingPath: self.codingPath, debugDescription: "Parsed CSV number \(number) does not fit in \(expectedType)."))
                 }
-                
+
                 return Float(double)
-                
+
                 /* FIXME: If swift-corelibs-foundation doesn't change to use NSNumber, this code path will need to be included and tested:
                  } else if let double = value as? Double {
                  if abs(double) <= Double(Float.max) {
@@ -957,7 +957,7 @@ extension CSVReader {
                  }
                  overflow = true
                  */
-                
+
 //            } else if let string = value as? String,
 //                case .convertFromString(let posInfString, let negInfString, let nanString) = self.options.nonConformingFloatDecodingStrategy {
 //                if string == posInfString {
@@ -968,11 +968,11 @@ extension CSVReader {
 //                    return Float.nan
 //                }
             }
-            
+
             throw DecodingError.typeMismatch(expectedType,
                                              DecodingError.Context(codingPath: self.codingPath, debugDescription: "Value '\(self.value)' is of type \(type(of: self.value))"))
         }
-        
+
         public func decode(_ expectedType: Double.Type) throws -> Double {
             try expectNonNull(Double.self)
 
@@ -982,7 +982,7 @@ extension CSVReader {
                 // * If it was a Float or Double, you will get back the precise value
                 // * If it was Decimal, you will get back the nearest approximation
                 return number.doubleValue
-                
+
                 /* FIXME: If swift-corelibs-foundation doesn't change to use NSNumber, this code path will need to be included and tested:
                  } else if let double = value as? Double {
                  return double
@@ -992,7 +992,7 @@ extension CSVReader {
                  }
                  overflow = true
                  */
-                
+
 //            } else if let string = value as? String,
 //                case .convertFromString(let posInfString, let negInfString, let nanString) = self.options.nonConformingFloatDecodingStrategy {
 //                if string == posInfString {
@@ -1003,21 +1003,21 @@ extension CSVReader {
 //                    return Double.nan
 //                }
             }
-            
+
             throw DecodingError.typeMismatch(expectedType,
                                              DecodingError.Context(codingPath: self.codingPath, debugDescription: "Value '\(self.value)' is of type \(type(of: self.value))"))
         }
-        
+
         public func decode(_ expectedType: String.Type) throws -> String {
             try expectNonNull(String.self)
             guard let string = value as? String else {
                 throw DecodingError.typeMismatch(expectedType,
                                                  DecodingError.Context(codingPath: self.codingPath, debugDescription: "Value '\(self.value)' is of type \(type(of: self.value))"))
             }
-            
+
             return string
         }
-        
+
         public func decode(_ expectedType: Date.Type) throws -> Date {
             try expectNonNull(String.self)
             /*
@@ -1060,9 +1060,9 @@ extension CSVReader {
  defer { self.storage.popContainer() }
  return try closure(self)
  }*/
-            
+
             let formatter = CSVReader.dateFormatter
-            
+
             guard let string = value as? String else {
                 throw DecodingError.typeMismatch(expectedType,
                                                  DecodingError.Context(codingPath: self.codingPath, debugDescription: "Value '\(self.value)' is of type \(type(of: self.value))"))
@@ -1073,8 +1073,8 @@ extension CSVReader {
             }
             return result
         }
-        
-        public func decode<T : Decodable>(_ type: T.Type) throws -> T {
+
+        public func decode<T: Decodable>(_ type: T.Type) throws -> T {
             try expectNonNull(type)
 //            return try self.unbox(self.value, as: type)!
             throw DecodingError.typeMismatch(T.self,
@@ -1082,7 +1082,7 @@ extension CSVReader {
                                                                    debugDescription: "decode(\(type))"))
         }
     }
-    
+
     public func readRow<T>() throws -> T? where T: Decodable {
         guard let headerRow = self.headerRow else {
             throw DecodingError.typeMismatch(T.self,
@@ -1090,11 +1090,11 @@ extension CSVReader {
                                                                    debugDescription: "readRow(): Header row required to map to Decodable")
             )
         }
-        
+
         guard let valuesRow = self.readRow() else {
             return nil
         }
-        
+
         let valuesForColumns = Dictionary(uniqueKeysWithValues: zip(headerRow, valuesRow))
 
         let decoder = CSVRowDecoder(codingPath: [], valuesByColumn: valuesForColumns)
